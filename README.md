@@ -1,17 +1,123 @@
 # Core Banking Transaction System
 
-A **Console-Based Core Banking System** built with **Java** and **Oracle Database 11g XE**. This application simulates real-world banking operations with secure authentication, ACID-compliant fund transfers, and persistent transaction history.
+A **production-grade Console Banking Application** demonstrating enterprise Java development practices with **Oracle Database** integration and **ACID-compliant** transactions.
 
 ---
 
-## 🛠 Technology Stack
+## 🏗️ Architecture Overview
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Language** | Java 17+ | Core application logic |
-| **Database** | Oracle Database 11g XE | Persistent data storage |
-| **Connectivity** | JDBC (ojdbc6.jar) | Java-to-Database communication |
-| **SQL** | Oracle PL/SQL | Data manipulation & queries |
+This project follows **Domain-Driven Design (DDD)** and **Layered Architecture** principles:
+
+```
+src/main/java/com/corebanking/
+├── CoreBankingApplication.java    # Application entry point
+├── config/                        # Configuration & DB connection
+│   ├── DatabaseConfig.java        # Centralized DB settings
+│   └── ConnectionManager.java     # JDBC connection factory
+├── model/                         # Domain entities
+│   ├── Account.java               # Account entity
+│   ├── Transaction.java           # Transaction entity
+│   └── TransactionType.java       # Type-safe enum
+├── dto/                           # Data Transfer Objects
+│   ├── LoginRequest.java          # Login input DTO
+│   ├── LoginResponse.java         # Login output DTO (no sensitive data)
+│   ├── TransferRequest.java       # Transfer input DTO
+│   └── TransferResult.java        # Transfer output DTO
+├── exception/                     # Custom exceptions
+│   ├── BankingException.java      # Base exception
+│   ├── AuthenticationException.java
+│   ├── AccountNotFoundException.java
+│   ├── InsufficientFundsException.java
+│   └── TransferException.java
+├── repository/                    # Data Access Layer
+│   ├── AccountRepository.java     # Interface
+│   ├── TransactionRepository.java # Interface
+│   └── impl/                      # JDBC implementations
+│       ├── AccountRepositoryImpl.java
+│       └── TransactionRepositoryImpl.java
+├── service/                       # Business Logic Layer
+│   ├── AuthenticationService.java # Interface
+│   ├── AccountService.java        # Interface
+│   └── impl/                      # Implementations
+│       ├── AuthenticationServiceImpl.java
+│       └── AccountServiceImpl.java  # ACID transfer logic
+└── ui/                            # Presentation Layer
+    └── ConsoleUI.java             # User interaction
+```
+
+---
+
+## 🛠️ Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Language | Java 17+ | Core application |
+| Database | Oracle 11g XE | Persistent storage |
+| Connectivity | JDBC | Database communication |
+| Architecture | Layered/DDD | Enterprise patterns |
+
+---
+
+## ✨ Key Technical Features
+
+### 1. ACID-Compliant Fund Transfers
+```java
+// Atomicity: All-or-nothing transactions
+conn.setAutoCommit(false);  // Start transaction
+// ... debit sender, credit receiver, log history ...
+conn.commit();  // Success: persist all changes
+// OR
+conn.rollback();  // Failure: undo everything
+```
+
+### 2. SQL Injection Prevention
+```java
+// Using PreparedStatement with parameterized queries
+PreparedStatement ps = conn.prepareStatement(
+    "SELECT * FROM accounts WHERE email = ? AND pin = ?"
+);
+ps.setString(1, email);  // Safe parameter binding
+ps.setInt(2, pin);
+```
+
+### 3. Separation of Concerns
+- **UI Layer**: Only handles user interaction
+- **Service Layer**: Contains all business logic
+- **Repository Layer**: Data access abstraction
+- **Model Layer**: Domain entities
+
+### 4. DTO Pattern
+Never expose entities directly - use DTOs to control data flow:
+```java
+// LoginResponse excludes sensitive PIN
+return new LoginResponse(account.getNumber(), account.getName(), account.getBalance());
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Java JDK 17+
+- Oracle Database 11g XE
+
+### Step 1: Setup Database
+```batch
+setup_database.bat
+```
+
+### Step 2: Build & Run
+```batch
+build.bat    # Compile
+run.bat      # Execute
+```
+
+### Test Credentials
+
+| User | Email | PIN | Balance |
+|------|-------|-----|---------|
+| Ravi Kumar | ravi@gmail.com | 1234 | ₹5,000.00 |
+| Priya Sharma | priya@gmail.com | 5678 | ₹2,000.00 |
 
 ---
 
@@ -19,104 +125,48 @@ A **Console-Based Core Banking System** built with **Java** and **Oracle Databas
 
 ```
 Core-Banking-Transaction-System/
-├── ConnectionManager.java    # Database connection handler
-├── AccountManager.java       # Business logic (Login, Transfer, History)
-├── OracleBankingApp.java     # Main application entry point
+├── src/
+│   └── main/
+│       └── java/
+│           └── com/corebanking/    # All source code
 ├── lib/
-│   └── ojdbc6.jar            # Oracle JDBC Driver
-├── database_setup.sql        # Table creation scripts
-├── init_db.sql               # Automated DB setup script
-├── setup_database.bat        # One-click database setup
-└── start_app.bat             # One-click application launcher
+│   └── ojdbc6.jar                  # Oracle JDBC driver
+├── target/
+│   └── classes/                    # Compiled bytecode
+├── sql/
+│   ├── schema.sql                  # Table definitions
+│   └── seed.sql                    # Test data
+├── build.bat                       # Build script
+├── run.bat                         # Run script
+├── setup_database.bat              # DB setup script
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## ✨ Key Features
+## 🔒 Security Highlights
 
-### 1. Secure Login (SQL Injection Prevention)
-- Uses **PreparedStatement** with parameterized queries
-- User credentials verified against database
-
-### 2. ACID-Compliant Fund Transfer
-- **Atomicity**: Both debit and credit succeed or fail together
-- **Consistency**: Balance validation before transfer
-- **Isolation**: Each transaction is independent
-- **Durability**: Data persisted after commit
-
-### 3. Transaction History
-- Every transfer logged with timestamp
-- Permanent record in database
+1. **No hardcoded credentials in code** - Config class can be extended to use environment variables
+2. **PreparedStatements everywhere** - No SQL injection vulnerabilities
+3. **PIN never exposed in DTOs** - LoginResponse excludes sensitive data
+4. **Input validation** - All user inputs validated before processing
 
 ---
 
-## 🗄 Database Schema
+## 📝 Resume Points
 
-**Table: `accounts`**
-| Column | Type | Description |
-|--------|------|-------------|
-| account_number | NUMBER(10) | Primary Key |
-| full_name | VARCHAR2(50) | Customer name |
-| email | VARCHAR2(50) | Unique login ID |
-| balance | NUMBER(10,2) | Current balance |
-| security_pin | NUMBER(4) | 4-digit PIN |
+> "Designed and implemented a **Core Banking System** using **Java 17** with **Oracle DB** integration, featuring **ACID-compliant transactions**, **layered architecture** (Controller-Service-Repository pattern), and **SQL injection prevention** using PreparedStatements."
 
-**Table: `transactions`**
-| Column | Type | Description |
-|--------|------|-------------|
-| transaction_id | NUMBER(10) | Primary Key |
-| account_number | NUMBER(10) | Foreign Key |
-| transaction_type | VARCHAR2(20) | Transfer Sent/Received |
-| amount | NUMBER(10,2) | Transaction amount |
-| balance_after | NUMBER(10,2) | Balance after transaction |
-| transaction_date | TIMESTAMP | Auto-generated |
-
----
-
-## 🚀 How to Run
-
-### Prerequisites
-- Java JDK 17+
-- Oracle Database 11g XE installed
-
-### Step 1: Setup Database (One-time)
-```
-Double-click: setup_database.bat
-Enter Oracle password when prompted
-```
-
-### Step 2: Run Application
-```
-Double-click: start_app.bat
-```
-
-### Test Credentials
-| User | Email | PIN | Balance |
-|------|-------|-----|---------|
-| Ravi Kumar | ravi@gmail.com | 1234 | Rs.5000.00 |
-| Priya Sharma | priya@gmail.com | 5678 | Rs.2000.00 |
-
----
-
-## 📸 Application Menu
-
-```
---- Banking Menu ---
-1. Check Balance
-2. Transfer Money
-3. Transaction History
-4. Logout
-```
-
----
-
-## 👨‍💻 Author
-
-**Srinivas**  
-Backend Java Developer
+### Skills Demonstrated:
+- Object-Oriented Design
+- JDBC & Database Transactions
+- Exception Handling
+- Design Patterns (Repository, DTO, Factory)
+- Clean Code Principles
 
 ---
 
 ## 📄 License
 
-This project is for educational purposes.
+MIT License - See [LICENSE](LICENSE) file.

@@ -1,12 +1,9 @@
 # Compiled class files
+target/
 *.class
 
 # Log files
 *.log
-
-# Package files
-*.jar
-!lib/*.jar
 
 # IDE files
 .idea/
@@ -17,3 +14,19 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# Package files
+*.jar
+!lib/*.jar
+
+# Environment files
+.env
+.env.local
+
+# Backup files
+*.bak
+*~
+
+# Build output
+out/
+build/
